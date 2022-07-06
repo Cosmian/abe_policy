@@ -1,0 +1,58 @@
+image: gitlab.cosmian.com:5000/core/ci-rust:latest
+
+variables:
+  CARGO_HOME: ${CI_PROJECT_DIR}/.cargo/
+  SCCACHE_DIR: ${CI_PROJECT_DIR}/.cache/sccache
+
+stages:
+  - prebuild
+  - build
+
+rustfmt:
+  stage: prebuild
+  cache: {}
+  script:
+    - cargo format
+
+doc:
+  stage: prebuild
+  cache: {}
+  script:
+    - cargo doc --all-features
+
+clippy:
+  stage: prebuild
+  cache: {}
+  script:
+    # no feature activated
+    - cargo clippy --all-targets -- -D warnings
+    # all features activated
+    - cargo clippy-all
+
+# Security check
+cargo_audit:
+  stage: prebuild
+  cache: {}
+  script:
+    - cargo audit
+  allow_failure: true
+  only:
+    refs:
+      - tags
+      - main
+      - develop
+
+#
+# Build base
+#
+.base_compile: &base_compile
+  stage: build
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}"
+    policy: pull
+    paths:
+      - $CARGO_HOME
+      - $SCCACHE_DIR
+  before_script:
+    - sccache -s
+
