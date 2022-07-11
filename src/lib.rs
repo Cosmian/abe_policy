@@ -2,11 +2,12 @@
 
 mod access_policy;
 mod attribute;
-pub mod error;
+mod error;
 mod policy;
 
 pub use access_policy::{ap, AccessPolicy};
 pub use attribute::{Attribute, Attributes};
+pub use error::Error;
 pub use policy::{Policy, PolicyAxis};
 
 #[cfg(test)]
