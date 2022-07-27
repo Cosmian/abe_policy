@@ -1,18 +1,16 @@
 #![allow(clippy::module_name_repetitions)]
 
+use crate::{Attribute, Error};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BinaryHeap, HashMap},
     fmt::{Debug, Display},
 };
 
-use serde::{Deserialize, Serialize};
-
-use super::attribute::Attribute;
-use crate::error::Error;
-
-// Define a policy axis by its name and its underlying attribute names
-// If `hierarchical` is `true`, we assume a lexicographical order based on the
-// attribute name
+/// Defines a policy axis by its name and its underlying attribute names.
+///
+/// If `hierarchical` is set to `true`, we assume a lexicographical order based
+/// on the attribute name.
 #[derive(Clone, Deserialize)]
 pub struct PolicyAxis {
     name: String,
@@ -21,6 +19,12 @@ pub struct PolicyAxis {
 }
 
 impl PolicyAxis {
+    /// Generate a new policy axis with the given name and attribute names. A
+    /// hierarchical axis enforce order between its attributes.
+    ///
+    /// - `name`        : axis name
+    /// - `attributes`  : name of the attributes on this axis
+    /// - `hierarchical`: set the axis to be hierarchical
     #[must_use]
     pub fn new(name: &str, attributes: &[&str], hierarchical: bool) -> Self {
         Self {
@@ -30,36 +34,42 @@ impl PolicyAxis {
         }
     }
 
+    /// Returns the number of attributes belonging to this axis.
     #[allow(clippy::len_without_is_empty)]
     #[must_use]
     pub fn len(&self) -> usize {
         self.attributes.len()
     }
 
+    /// Returns the list of attribute names belonging to this axis.
     pub fn attributes(&self) -> &[String] {
         &self.attributes
     }
 
+    /// Returns the axis name.
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// Return `true` if this axis is hierarchical.
     pub fn is_hierarchical(&self) -> bool {
         self.hierarchical
     }
 }
 
-/// A policy is a set of fixed policy axes, defining an inner attribute
-/// element for each policy axis attribute a fixed number of revocation
-/// addition of attributes is allowed
+/// A policy is a set of policy axes. A fixed number of attribute creations
+/// (revocations + additions) is allowed.
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Policy {
-    pub last_attribute_value: u32,
-    pub max_attribute_value: u32,
-    /// store the policies by name
-    pub store: HashMap<String, (Vec<String>, bool)>,
+    /// Last value taken by the attriute.
+    last_attribute_value: u32,
+    /// Maximum attribute value. Defines a maximum number of attribute
+    /// creations (revocations + addition).
+    max_attribute_value: u32,
+    /// Policy axes
+    axes: HashMap<String, (Vec<String>, bool)>,
     /// mapping between attribute -> integer
-    pub attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
+    attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
 }
 
 impl Display for Policy {
@@ -73,35 +83,34 @@ impl Display for Policy {
 }
 
 impl Policy {
+    /// Generates a new policy object with the given number of attribute
+    /// creation (revocation + addition) allowed.
     #[must_use]
-    pub fn new(nb_revocation: u32) -> Self {
+    pub fn new(nb_creations: u32) -> Self {
         Self {
             last_attribute_value: 0,
-            max_attribute_value: nb_revocation,
-            store: HashMap::new(),
+            max_attribute_value: nb_creations,
+            axes: HashMap::new(),
             attribute_to_int: HashMap::new(),
         }
     }
 
-    /// Returns the policy in the for of a Map where
+    /// Returns the policy in the form of a Map where
     ///  - the keys are the axis names
     ///  - the values are a tuple of
     ///     - list of attribute names for that axis
     ///     - whether the axis hierarchical
     pub fn as_map(&self) -> &HashMap<String, (Vec<String>, bool)> {
-        &self.store
+        &self.axes
     }
 
+    /// Return the number of attribute creations allowed.
     #[must_use]
     pub fn max_attr(&self) -> u32 {
         self.max_attribute_value
     }
 
-    /// Add a policy axis, mapping each attribute to a unique number in this
-    /// `Policy`
-    ///
-    /// When the axis is hierarchical, attributes must be provided in descending
-    /// order
+    /// Adds the given policy axis to the policy.
     pub fn add_axis(&mut self, axis: &PolicyAxis) -> Result<(), Error> {
         if axis.len() > u32::MAX as usize {
             return Err(Error::CapacityOverflow);
@@ -110,10 +119,10 @@ impl Policy {
             return Err(Error::CapacityOverflow);
         }
         // insert new policy
-        if self.store.contains_key(&axis.name) {
+        if self.axes.contains_key(&axis.name) {
             return Err(Error::ExistingPolicy(axis.name.clone()));
         } else {
-            self.store.insert(
+            self.axes.insert(
                 axis.name.clone(),
                 (axis.attributes.clone(), axis.hierarchical),
             );
@@ -136,8 +145,8 @@ impl Policy {
         Ok(())
     }
 
-    /// Rotate an attribute, changing its underlying value with that of an
-    /// unused slot
+    /// Rotates an attribute, changing its underlying value with that of an
+    /// unused slot.
     pub fn rotate(&mut self, attr: &Attribute) -> Result<(), Error> {
         if self.last_attribute_value == self.max_attribute_value {
             Err(Error::CapacityOverflow)
@@ -150,7 +159,7 @@ impl Policy {
         }
     }
 
-    /// Returns the list of Attributes of this Policy
+    /// Returns the list of Attributes of this Policy.
     pub fn attributes(&self) -> Vec<Attribute> {
         self.attribute_to_int
             .keys()
@@ -171,7 +180,7 @@ impl Policy {
         Ok(v)
     }
 
-    /// Retrieves the current value of an attribute
+    /// Retrieves the current value of an attribute.
     pub fn attribute_current_value(&self, attribute: &Attribute) -> Result<u32, Error> {
         let values = self.attribute_values(attribute)?;
         values
@@ -185,7 +194,7 @@ impl Policy {
             .cloned()
     }
 
-    /// Retrieve the current attributes values for the `Attribute` list
+    /// Retrieves the current attribute values for the `Attribute` list
     pub fn attributes_values(&self, attributes: &[Attribute]) -> Result<Vec<u32>, Error> {
         let mut values: Vec<u32> = Vec::with_capacity(attributes.len());
         for att in attributes {

@@ -1,13 +1,11 @@
 #![allow(clippy::module_name_repetitions)]
 
+use crate::Error;
 use serde::{Deserialize, Serialize};
-
-use crate::error::Error;
-
 use std::{convert::TryFrom, fmt::Debug};
 
-// An attribute in a policy group is characterized by the axis policy name
-// and its unique name within the axis
+/// An attribute in a policy group is characterized by the axis policy name
+/// and its unique name within this axis.
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(try_from = "&str", into = "String")]
 pub struct Attribute {
@@ -17,18 +15,24 @@ pub struct Attribute {
 
 impl Attribute {
     /// Create a Policy Attribute.
+    ///
+    /// - `axis`    : policy axis the attributes belongs to
+    /// - `name`    : unique attribute name within this axis
     pub fn new(axis: &str, name: &str) -> Self {
         Self {
             axis: axis.to_owned(),
             name: name.to_owned(),
         }
     }
-    pub fn axis(&self) -> String {
-        self.axis.clone()
+
+    /// Returns the axis name.
+    pub fn axis(&self) -> &str {
+        &self.axis
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    /// Return the attribute name within its axis.
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -92,14 +96,15 @@ impl From<Attribute> for String {
     }
 }
 
-/// Attributes struct is used to simplify the parsing of a list of Attribute
+/// The `Attributes` struct is used to simplify the parsing of a list of
+/// `Attribute`s.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Attributes {
     attributes: Vec<Attribute>,
 }
 
 impl Attributes {
-    /// Get a reference to the attributes's attributes.
+    /// Converts into a slice of attributes.
     #[must_use]
     pub fn attributes(&self) -> &[Attribute] {
         self.attributes.as_ref()

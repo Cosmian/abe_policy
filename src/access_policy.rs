@@ -1,21 +1,20 @@
 #![allow(clippy::module_name_repetitions)]
 
+use crate::{Attribute, Error};
 use serde::{Deserialize, Serialize};
-
-use super::attribute::Attribute;
-use crate::error::Error;
 use std::{
     collections::HashMap,
     fmt::Debug,
     ops::{BitAnd, BitOr},
 };
 
-/// the number of characters taken by an operator in the Access Policy string
+/// The number of characters taken by an operator in the `AccessPolicy` string
 /// in this case the operators are : || and &&
 const OPERATOR_SIZE: usize = 2;
 
-// An `AccessPolicy` is a boolean expression over attributes
-// Only `positive` literals are allowed (no negation)
+/// An `AccessPolicy` is a boolean expression over attributes.
+///
+/// Only `positive` literals are allowed (no negation).
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum AccessPolicy {
     Attr(Attribute),
@@ -38,8 +37,7 @@ impl PartialEq for AccessPolicy {
 }
 
 impl AccessPolicy {
-    /// Create an Access Policy
-    /// based on a single Policy Attribute.
+    /// Creates an Access Policy based on a single Policy Attribute.
     ///
     /// Shortcut for
     /// ```ignore
@@ -55,7 +53,7 @@ impl AccessPolicy {
         Self::Attr(Attribute::new(axis, attribute))
     }
 
-    /// Convert policy to integer value (for comparison).
+    /// Converts policy to integer value (for comparison).
     /// Each attribute is mapped to an integer value and the algebraic
     /// expression is applied with those values.
     /// We must keep a mapping of each attribute to the corresponding integer
@@ -78,7 +76,7 @@ impl AccessPolicy {
         }
     }
 
-    /// Generate an access policy from a map of policy access names to policy
+    /// Generates an access policy from a map of policy access names to policy
     /// attributes. The axes are `ORed` between each others while the attributes
     /// of each axis are `ANDed`.
     ///
@@ -101,7 +99,7 @@ impl AccessPolicy {
     /// );
     /// ```
     pub fn from_axes(axes_attributes: &HashMap<String, Vec<String>>) -> Result<Self, Error> {
-        let mut access_policies: Vec<Self> = Vec::with_capacity(axes_attributes.len());
+        let mut access_policies = Vec::with_capacity(axes_attributes.len());
         for (axis, attributes) in axes_attributes {
             access_policies.push(
                 attributes
@@ -127,7 +125,6 @@ impl AccessPolicy {
     fn find_next_parenthesis(boolean_expression: &str) -> Result<usize, Error> {
         let mut count = 0;
         let mut right_closing_parenthesis = None;
-        // Skip first parenthesis
         for (index, c) in boolean_expression.chars().enumerate() {
             match c {
                 '(' => count += 1,
@@ -147,9 +144,10 @@ impl AccessPolicy {
         })
     }
 
-    /// Sanitize spaces in boolean expression around parenthesis and operators
-    /// but keep spaces inside axis & attribute names We remove useless
-    /// spaces:
+    /// Sanitizes spaces in boolean expression around parenthesis and operators
+    /// but keep spaces inside axis & attribute names.
+    ///
+    /// Useless spaces are removed:
     /// - before and after operator. Example: `A && B` --> `A&&B`
     /// - before and after parenthesis. Example: `(A && B)` --> `(A&&B)`
     /// - But keep these spaces: `(A::b c || d e::F)` --> `(A::b c||d e::F)`
@@ -184,10 +182,8 @@ impl AccessPolicy {
         output
     }
 
-    /// This function takes a boolean expression and splits it into 3 parts:
-    /// - left part
-    /// - operator
-    /// - right part
+    /// This function takes a boolean expression and splits it into a left part,
+    /// an operator and a right part.
     ///
     /// Example: "`Department::HR` && `Level::level_2`" will be decomposed in:
     /// - `Department::HR`
@@ -223,10 +219,18 @@ impl AccessPolicy {
         if split_position == boolean_expression.len() {
             return Ok((left_part.to_string(), None, None));
         }
+        if split_position + OPERATOR_SIZE > boolean_expression.len() {
+            return Err(Error::InvalidBooleanExpression(format!(
+                "Cannot split boolean expression {boolean_expression} at position \
+                 {} since it is greater than the size of \
+                 {boolean_expression}",
+                split_position + OPERATOR_SIZE
+            )));
+        }
+
         let operator = &boolean_expression[split_position..split_position + OPERATOR_SIZE];
 
         // Put aside `Level::level_2` from `Department::HR && Level::level_2`
-        // Skip 2 next characters (parenthesis + next char)
         let right_part = &boolean_expression[split_position + OPERATOR_SIZE..];
         Ok((
             left_part.to_string(),
@@ -235,7 +239,7 @@ impl AccessPolicy {
         ))
     }
 
-    /// Convert a boolean expression into `AccessPolicy`.
+    /// Converts a boolean expression into `AccessPolicy`.
     ///
     /// # Arguments
     ///
@@ -357,7 +361,9 @@ impl AccessPolicy {
         }
     }
 
-    /// Retrieve all the Attributes present in this access policy
+    /// Retrieves all the Attributes present in this access policy.
+    ///
+    /// The attributes are sorted. This is useful for comparisons.
     pub fn attributes(&self) -> Vec<Attribute> {
         let mut attributes = self._attributes();
         attributes.sort();
@@ -400,23 +406,4 @@ impl From<Attribute> for AccessPolicy {
     fn from(attribute: Attribute) -> Self {
         Self::Attr(attribute)
     }
-}
-
-/// Create an axis policy from a simple attribute
-///
-/// Shorthand for
-/// ```
-/// let axis = "axis_name";
-/// let attribute_name = "attribute_name";
-/// let access_policy = abe_policy::AccessPolicy::new(axis, attribute_name);
-/// ```
-///
-/// Used to easily build access policies programmatically
-/// ```
-/// use abe_policy::ap;
-/// let access_policy =
-///     ap("Security Level", "level 4") & (ap("Department", "MKG") | ap("Department", "FIN"));
-/// ```
-pub fn ap(axis: &str, attribute_name: &str) -> AccessPolicy {
-    AccessPolicy::new(axis, attribute_name)
 }
