@@ -1,5 +1,3 @@
-#![allow(clippy::module_name_repetitions)]
-
 use crate::Error;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt::Debug};
