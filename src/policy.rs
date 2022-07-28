@@ -49,7 +49,7 @@ impl PolicyAxis {
         &self.name
     }
 
-    /// Return `true` if this axis is hierarchical.
+    /// Returns `true` if this axis is hierarchical.
     pub fn is_hierarchical(&self) -> bool {
         self.hierarchical
     }
