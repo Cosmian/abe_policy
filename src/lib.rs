@@ -7,8 +7,6 @@
 //! An `Attribute` is composed by an axis name and an attribute name within
 //! this axis.
 
-#![allow(clippy::module_name_repetitions)]
-
 mod access_policy;
 mod attribute;
 mod error;
