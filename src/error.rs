@@ -1,7 +1,7 @@
-use std::fmt::Debug;
-
+//! Define this crate error type.
 use thiserror::Error;
 
+/// Crate error type.
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("attribute not found: {0}")]
