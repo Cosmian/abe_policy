@@ -17,8 +17,8 @@ pub struct PolicyAxis {
 }
 
 impl PolicyAxis {
-    /// Generate a new policy axis with the given name and attribute names. A
-    /// hierarchical axis enforce order between its attributes.
+    /// Generates a new policy axis with the given name and attribute names.
+    /// A hierarchical axis enforces order between its attributes.
     ///
     /// - `name`        : axis name
     /// - `attributes`  : name of the attributes on this axis
