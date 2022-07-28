@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 - review code for ANSSI submission
 ### Fixed
 ### Removed
-- `ap()` is replaced by `AccessPolicy::new()`
+- `ap()` is removed. Use `AccessPolicy::new()` instead
 ---
 
 ---

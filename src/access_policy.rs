@@ -45,7 +45,8 @@ impl AccessPolicy {
     /// Access Policies can easily be created using it
     /// ```ignore
     /// let access_policy =
-    ///     ap("Security Level", "level 4") & (ap("Department", "MKG") | ap("Department", "FIN"));
+    ///     AccessPolicy::new("Security Level", "level 4")
+    ///         & (AccessPolicy::new("Department", "MKG") | AccessPolicy::new("Department", "FIN"));
     /// ```
     pub fn new(axis: &str, attribute: &str) -> Self {
         Self::Attr(Attribute::new(axis, attribute))
@@ -80,7 +81,7 @@ impl AccessPolicy {
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use abe_policy::{ap, AccessPolicy};
+    /// use abe_policy::AccessPolicy;
     ///
     /// let axes = serde_json::from_str(
     ///     r#"{
@@ -93,7 +94,7 @@ impl AccessPolicy {
     /// let access_policy = AccessPolicy::from_axes(&axes);
     /// assert_eq!(
     ///     access_policy.unwrap(),
-    ///     (ap("Department", "HR") | ap("Department", "FIN")) & ap("Level", "level_2"),
+    ///     (AccessPolicy::new("Department", "HR") | AccessPolicy::new("Department", "FIN")) & AccessPolicy::new("Level", "level_2"),
     /// );
     /// ```
     pub fn from_axes(axes_attributes: &HashMap<String, Vec<String>>) -> Result<Self, Error> {
@@ -250,13 +251,13 @@ impl AccessPolicy {
     /// # Examples
     ///
     /// ```
-    /// use abe_policy::{ap, AccessPolicy};
+    /// use abe_policy::AccessPolicy;
     ///
     /// let boolean_expression = "(Department::HR || Department::RnD) && Level::level_2";
     /// let access_policy = AccessPolicy::from_boolean_expression(boolean_expression);
     /// assert_eq!(
     ///     access_policy.unwrap(),
-    ///     (ap("Department", "HR") | ap("Department", "RnD")) & ap("Level", "level_2"),
+    ///     (AccessPolicy::new("Department", "HR") | AccessPolicy::new("Department", "RnD")) & AccessPolicy::new("Level", "level_2"),
     /// );
     /// ```
     /// # Errors
@@ -359,7 +360,7 @@ impl AccessPolicy {
         }
     }
 
-    /// Retrieves all the Attributes present in this access policy.
+    /// Retrieves all the attributes present in this access policy.
     ///
     /// The attributes are sorted. This is useful for comparisons.
     pub fn attributes(&self) -> Vec<Attribute> {

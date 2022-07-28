@@ -13,10 +13,10 @@ fn policy() -> Result<Policy, Error> {
     // check that policy
     let attributes = policy.attributes();
     assert_eq!(sec_level.len() + department.len(), attributes.len());
-    for att in sec_level.attributes() {
+    for att in &sec_level.attributes {
         assert!(attributes.contains(&Attribute::new("Security Level", att)))
     }
-    for att in department.attributes() {
+    for att in &department.attributes {
         assert!(attributes.contains(&Attribute::new("Department", att)))
     }
     for attribute in &attributes {

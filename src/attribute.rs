@@ -1,14 +1,14 @@
 use crate::Error;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, fmt::Debug};
+use std::{convert::TryFrom, fmt::Debug, ops::Deref};
 
 /// An attribute in a policy group is characterized by the axis policy name
 /// and its unique name within this axis.
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(try_from = "&str", into = "String")]
 pub struct Attribute {
-    axis: String,
-    name: String,
+    pub axis: String,
+    pub name: String,
 }
 
 impl Attribute {
@@ -21,16 +21,6 @@ impl Attribute {
             axis: axis.to_owned(),
             name: name.to_owned(),
         }
-    }
-
-    /// Returns the axis name.
-    pub fn axis(&self) -> &str {
-        &self.axis
-    }
-
-    /// Return the attribute name within its axis.
-    pub fn name(&self) -> &str {
-        &self.name
     }
 }
 
@@ -101,11 +91,11 @@ pub struct Attributes {
     attributes: Vec<Attribute>,
 }
 
-impl Attributes {
-    /// Converts into a slice of attributes.
-    #[must_use]
-    pub fn attributes(&self) -> &[Attribute] {
-        self.attributes.as_ref()
+impl Deref for Attributes {
+    type Target = Vec<Attribute>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.attributes
     }
 }
 

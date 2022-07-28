@@ -11,9 +11,12 @@ use std::{
 /// on the attribute name.
 #[derive(Clone, Deserialize)]
 pub struct PolicyAxis {
-    name: String,
-    attributes: Vec<String>,
-    hierarchical: bool,
+    /// Axis name
+    pub name: String,
+    /// Name of the attributes associated to this axis
+    pub attributes: Vec<String>,
+    /// `true` if the axis is hierarchical
+    pub hierarchical: bool,
 }
 
 impl PolicyAxis {
@@ -33,25 +36,14 @@ impl PolicyAxis {
     }
 
     /// Returns the number of attributes belonging to this axis.
-    #[allow(clippy::len_without_is_empty)]
     #[must_use]
     pub fn len(&self) -> usize {
         self.attributes.len()
     }
 
-    /// Returns the list of attribute names belonging to this axis.
-    pub fn attributes(&self) -> &[String] {
-        &self.attributes
-    }
-
-    /// Returns the axis name.
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    /// Returns `true` if this axis is hierarchical.
-    pub fn is_hierarchical(&self) -> bool {
-        self.hierarchical
+    /// Return `true` if the attribute list is empty
+    pub fn is_empty(&self) -> bool {
+        self.attributes.is_empty()
     }
 }
 
@@ -63,9 +55,10 @@ pub struct Policy {
     last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
     /// creations (revocations + addition).
-    max_attribute_value: u32,
-    /// Policy axes
-    axes: HashMap<String, (Vec<String>, bool)>,
+    pub max_attribute_creations: u32,
+    /// Policy axes: maps axes name to the list of associated attribute names
+    /// and a boolean defining whether or not this axis is hierarchical.
+    pub axes: HashMap<String, (Vec<String>, bool)>,
     /// mapping between attribute -> integer
     attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
 }
@@ -87,10 +80,15 @@ impl Policy {
     pub fn new(nb_creations: u32) -> Self {
         Self {
             last_attribute_value: 0,
-            max_attribute_value: nb_creations,
+            max_attribute_creations: nb_creations,
             axes: HashMap::new(),
             attribute_to_int: HashMap::new(),
         }
+    }
+
+    /// Returns the remaining number of allowed attribute creations (additions + rotations).
+    pub fn remaining_attribute_creations(&self) -> u32 {
+        self.max_attribute_creations - self.last_attribute_value
     }
 
     /// Returns the policy in the form of a Map where
@@ -98,22 +96,12 @@ impl Policy {
     ///  - the values are a tuple of
     ///     - list of attribute names for that axis
     ///     - whether the axis hierarchical
-    pub fn as_map(&self) -> &HashMap<String, (Vec<String>, bool)> {
-        &self.axes
-    }
-
-    /// Return the number of attribute creations allowed.
-    #[must_use]
-    pub fn max_attr(&self) -> u32 {
-        self.max_attribute_value
-    }
-
     /// Adds the given policy axis to the policy.
     pub fn add_axis(&mut self, axis: &PolicyAxis) -> Result<(), Error> {
         if axis.len() > u32::MAX as usize {
             return Err(Error::CapacityOverflow);
         }
-        if (axis.len() as u32) + self.last_attribute_value > self.max_attribute_value {
+        if (axis.len() as u32) + self.last_attribute_value > self.max_attribute_creations {
             return Err(Error::CapacityOverflow);
         }
         // insert new policy
@@ -143,10 +131,10 @@ impl Policy {
         Ok(())
     }
 
-    /// Rotates an attribute, changing its underlying value with that of an
-    /// unused slot.
+    /// Rotates an attribute, changing its underlying value with an unused
+    /// value.
     pub fn rotate(&mut self, attr: &Attribute) -> Result<(), Error> {
-        if self.last_attribute_value == self.max_attribute_value {
+        if self.last_attribute_value == self.max_attribute_creations {
             Err(Error::CapacityOverflow)
         } else if let Some(heap) = self.attribute_to_int.get_mut(attr) {
             self.last_attribute_value += 1;
