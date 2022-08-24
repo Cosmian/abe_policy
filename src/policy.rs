@@ -60,7 +60,7 @@ pub struct Policy {
     /// and a boolean defining whether or not this axis is hierarchical.
     pub axes: HashMap<String, (Vec<String>, bool)>,
     /// mapping between attribute -> integer
-    attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
+    pub attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
 }
 
 impl Display for Policy {

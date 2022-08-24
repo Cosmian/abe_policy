@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.0.1] - 2022-08-24
+### Added
+### Changed
+- make `attribute_to_int` public
+### Fixed
+### Removed
+---
+
+---
 ## [1.0.0] - 2022-07-27
 ### Added
 ### Changed
