@@ -52,7 +52,7 @@ impl PolicyAxis {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Policy {
     /// Last value taken by the attriute.
-    last_attribute_value: u32,
+    pub last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
     /// creations (revocations + addition).
     pub max_attribute_creations: u32,
@@ -60,7 +60,7 @@ pub struct Policy {
     /// and a boolean defining whether or not this axis is hierarchical.
     pub axes: HashMap<String, (Vec<String>, bool)>,
     /// mapping between attribute -> integer
-    attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
+    pub attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
 }
 
 impl Display for Policy {
