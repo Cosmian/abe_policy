@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 ### Changed
 - make `attribute_to_int` public
+- make `last_attribute_value` public
 ### Fixed
 ### Removed
 ---

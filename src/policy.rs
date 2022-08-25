@@ -52,7 +52,7 @@ impl PolicyAxis {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Policy {
     /// Last value taken by the attriute.
-    last_attribute_value: u32,
+    pub last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
     /// creations (revocations + addition).
     pub max_attribute_creations: u32,
