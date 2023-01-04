@@ -1,14 +1,10 @@
-use crate::{Attribute, Error};
+use crate::{Attribute, Error, Policy};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::Debug,
     ops::{BitAnd, BitOr},
 };
-
-/// The number of characters taken by an operator in the `AccessPolicy` string
-/// in this case the operators are : || and &&
-const OPERATOR_SIZE: usize = 2;
 
 /// An `AccessPolicy` is a boolean expression over attributes.
 ///
@@ -192,6 +188,10 @@ impl AccessPolicy {
         boolean_expression: &str,
         split_position: usize,
     ) -> Result<(String, Option<String>, Option<String>), Error> {
+        /// Number of characters of an `AccessPolicy` operator.
+        /// Possible operators are: '||' and '&&'.
+        const OPERATOR_SIZE: usize = 2;
+
         if split_position > boolean_expression.len() {
             return Err(Error::InvalidBooleanExpression(format!(
                 "Cannot split boolean expression {boolean_expression} at position \
@@ -379,6 +379,66 @@ impl AccessPolicy {
             }
 
             Self::All => vec![],
+        }
+    }
+
+    /// Returns the list of attribute combinations that can be built from the
+    /// given access policy. It is an OR expression of AND expressions.
+    ///
+    /// - `policy`                      : global policy
+    /// - `follow_hierarchical_axes`    : set to `true` to combine lower axis attributes
+    pub fn to_attribute_combinations(
+        &self,
+        policy: &Policy,
+        follow_hierarchical_axes: bool,
+    ) -> Result<Vec<Vec<Attribute>>, Error> {
+        match self {
+            Self::Attr(attr) => {
+                let (attribute_names, is_hierarchical) = policy
+                    .axes
+                    .get(&attr.axis)
+                    .ok_or_else(|| Error::InvalidAxis(attr.axis.clone()))?;
+                let mut res = vec![vec![attr.clone()]];
+                if *is_hierarchical && follow_hierarchical_axes {
+                    // add attribute values for all attributes below the given one
+                    for name in attribute_names {
+                        if *name == attr.name {
+                            break;
+                        }
+                        res.push(vec![Attribute::new(&attr.axis, name)]);
+                    }
+                }
+                Ok(res)
+            }
+            Self::And(ap_left, ap_right) => {
+                let combinations_left =
+                    ap_left.to_attribute_combinations(policy, follow_hierarchical_axes)?;
+                let combinations_right =
+                    ap_right.to_attribute_combinations(policy, follow_hierarchical_axes)?;
+                let mut res =
+                    Vec::with_capacity(combinations_left.len() * combinations_right.len());
+                for value_left in combinations_left {
+                    for value_right in &combinations_right {
+                        let mut combined = Vec::with_capacity(value_left.len() + value_right.len());
+                        combined.extend_from_slice(&value_left);
+                        combined.extend_from_slice(value_right);
+                        res.push(combined)
+                    }
+                }
+                Ok(res)
+            }
+            Self::Or(ap_left, ap_right) => {
+                let combinations_left =
+                    ap_left.to_attribute_combinations(policy, follow_hierarchical_axes)?;
+                let combinations_right =
+                    ap_right.to_attribute_combinations(policy, follow_hierarchical_axes)?;
+                let mut res =
+                    Vec::with_capacity(combinations_left.len() + combinations_right.len());
+                res.extend(combinations_left);
+                res.extend(combinations_right);
+                Ok(res)
+            }
+            AccessPolicy::All => Ok(vec![vec![]]),
         }
     }
 }

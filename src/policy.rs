@@ -1,11 +1,13 @@
 use crate::{Attribute, Error};
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BinaryHeap, HashMap},
+    collections::HashMap,
     fmt::{Debug, Display},
 };
 
-/// Defines a policy axis by its name and its underlying attribute names.
+/// Defines a policy axis by its name and its underlying attribute properties.
+/// An attribute property defines its name and a hint about whether hybridized
+/// encryption should be used for it (hint set to `true` if this is the case).
 ///
 /// If `hierarchical` is set to `true`, we assume a lexicographical order based
 /// on the attribute name.
@@ -13,8 +15,8 @@ use std::{
 pub struct PolicyAxis {
     /// Axis name
     pub name: String,
-    /// Name of the attributes associated to this axis
-    pub attributes: Vec<String>,
+    /// Names of the axis attributes and hybridized encryption hints
+    pub attribute_properties: Vec<(String, bool)>,
     /// `true` if the axis is hierarchical
     pub hierarchical: bool,
 }
@@ -23,14 +25,17 @@ impl PolicyAxis {
     /// Generates a new policy axis with the given name and attribute names.
     /// A hierarchical axis enforces order between its attributes.
     ///
-    /// - `name`        : axis name
-    /// - `attributes`  : name of the attributes on this axis
-    /// - `hierarchical`: set the axis to be hierarchical
+    /// - `name`                    : axis name
+    /// - `attribute_properties`    : axis attribute properties
+    /// - `hierarchical`            : set to `true` if the axis is hierarchical
     #[must_use]
-    pub fn new(name: &str, attributes: &[&str], hierarchical: bool) -> Self {
+    pub fn new(name: &str, attribute_properties: Vec<(&str, bool)>, hierarchical: bool) -> Self {
         Self {
-            name: name.to_owned(),
-            attributes: attributes.iter().map(|s| (*s).to_string()).collect(),
+            name: name.to_string(),
+            attribute_properties: attribute_properties
+                .into_iter()
+                .map(|(axis_name, is_hybridized)| (axis_name.to_string(), is_hybridized))
+                .collect(),
             hierarchical,
         }
     }
@@ -38,12 +43,12 @@ impl PolicyAxis {
     /// Returns the number of attributes belonging to this axis.
     #[must_use]
     pub fn len(&self) -> usize {
-        self.attributes.len()
+        self.attribute_properties.len()
     }
 
     /// Return `true` if the attribute list is empty
     pub fn is_empty(&self) -> bool {
-        self.attributes.is_empty()
+        self.attribute_properties.is_empty()
     }
 }
 
@@ -52,15 +57,15 @@ impl PolicyAxis {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Policy {
     /// Last value taken by the attriute.
-    pub last_attribute_value: u32,
+    pub(crate) last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
     /// creations (revocations + addition).
     pub max_attribute_creations: u32,
     /// Policy axes: maps axes name to the list of associated attribute names
     /// and a boolean defining whether or not this axis is hierarchical.
     pub axes: HashMap<String, (Vec<String>, bool)>,
-    /// mapping between attribute -> integer
-    pub attribute_to_int: HashMap<Attribute, BinaryHeap<u32>>,
+    /// Maps an attribute to its values and its hybridization hint.
+    pub attributes: HashMap<Attribute, (Vec<u32>, bool)>,
 }
 
 impl Display for Policy {
@@ -82,7 +87,7 @@ impl Policy {
             last_attribute_value: 0,
             max_attribute_creations: nb_creations,
             axes: HashMap::new(),
-            attribute_to_int: HashMap::new(),
+            attributes: HashMap::new(),
         }
     }
 
@@ -97,37 +102,30 @@ impl Policy {
     ///     - list of attribute names for that axis
     ///     - whether the axis hierarchical
     /// Adds the given policy axis to the policy.
-    pub fn add_axis(&mut self, axis: &PolicyAxis) -> Result<(), Error> {
-        if axis.len() > u32::MAX as usize {
+    pub fn add_axis(&mut self, axis: PolicyAxis) -> Result<(), Error> {
+        if axis.len() > (self.max_attribute_creations - self.last_attribute_value) as usize {
             return Err(Error::CapacityOverflow);
         }
-        if (axis.len() as u32) + self.last_attribute_value > self.max_attribute_creations {
-            return Err(Error::CapacityOverflow);
+        if self.axes.get(&axis.name).is_some() {
+            return Err(Error::ExistingPolicy(axis.name));
         }
-        // insert new policy
-        if self.axes.contains_key(&axis.name) {
-            return Err(Error::ExistingPolicy(axis.name.clone()));
-        } else {
-            self.axes.insert(
-                axis.name.clone(),
-                (axis.attributes.clone(), axis.hierarchical),
+        let mut axis_attributes = Vec::with_capacity(axis.attribute_properties.len());
+
+        for (attr_name, is_hybridized) in axis.attribute_properties {
+            self.last_attribute_value += 1;
+            axis_attributes.push(attr_name.clone());
+            let attribute = (axis.name.clone(), attr_name).into();
+            if self.attributes.get(&attribute).is_some() {
+                return Err(Error::ExistingPolicy(format!("{attribute:?}")));
+            }
+            self.attributes.insert(
+                attribute,
+                ([self.last_attribute_value].into(), is_hybridized),
             );
         }
 
-        for attr in &axis.attributes {
-            self.last_attribute_value += 1;
-            if self
-                .attribute_to_int
-                .insert(
-                    (axis.name.clone(), attr.clone()).into(),
-                    vec![self.last_attribute_value].into(),
-                )
-                .is_some()
-            {
-                // must never occurs as policy is a new one
-                return Err(Error::ExistingPolicy(axis.name.clone()));
-            }
-        }
+        self.axes
+            .insert(axis.name, (axis_attributes, axis.hierarchical));
         Ok(())
     }
 
@@ -136,61 +134,42 @@ impl Policy {
     pub fn rotate(&mut self, attr: &Attribute) -> Result<(), Error> {
         if self.last_attribute_value == self.max_attribute_creations {
             Err(Error::CapacityOverflow)
-        } else if let Some(heap) = self.attribute_to_int.get_mut(attr) {
+        } else if let Some((heap, _)) = self.attributes.get_mut(attr) {
             self.last_attribute_value += 1;
             heap.push(self.last_attribute_value);
             Ok(())
         } else {
-            Err(Error::AttributeNotFound(format!("{:?}", attr)))
+            Err(Error::AttributeNotFound(attr.to_string()))
         }
     }
 
     /// Returns the list of Attributes of this Policy.
     pub fn attributes(&self) -> Vec<Attribute> {
-        self.attribute_to_int
-            .keys()
-            .cloned()
-            .collect::<Vec<Attribute>>()
+        self.attributes.keys().cloned().collect::<Vec<Attribute>>()
     }
 
-    /// Returns the list of all attributes values given to this Attribute
-    /// over the time after rotations. The current value is returned first
+    /// Returns the list of all values given to this attribute over rotations.
+    /// The current value is returned first
     pub fn attribute_values(&self, attribute: &Attribute) -> Result<Vec<u32>, Error> {
-        let mut v = self
-            .attribute_to_int
+        self.attributes
             .get(attribute)
-            .cloned()
-            .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))?
-            .into_sorted_vec();
-        v.reverse();
-        Ok(v)
+            .map(|(values, _)| values.iter().rev().copied().collect())
+            .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
+    }
+
+    /// Returns the hybridization hint of the given attribute.
+    pub fn attribute_hybridization_hint(&self, attribute: &Attribute) -> Result<bool, Error> {
+        self.attributes
+            .get(attribute)
+            .map(|(_, is_hybridized)| *is_hybridized)
+            .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
     }
 
     /// Retrieves the current value of an attribute.
     pub fn attribute_current_value(&self, attribute: &Attribute) -> Result<u32, Error> {
-        let values = self.attribute_values(attribute)?;
-        values
-            .first()
-            .ok_or_else(|| {
-                Error::InvalidAttribute(format!(
-                    "the attribute {} does not have any value!",
-                    attribute
-                ))
-            })
-            .cloned()
-    }
-
-    /// Retrieves the current attribute values for the `Attribute` list
-    pub fn attributes_values(&self, attributes: &[Attribute]) -> Result<Vec<u32>, Error> {
-        let mut values: Vec<u32> = Vec::with_capacity(attributes.len());
-        for att in attributes {
-            let v = self
-                .attribute_to_int
-                .get(att)
-                .and_then(std::collections::BinaryHeap::peek)
-                .ok_or_else(|| Error::AttributeNotFound(format!("{:?}", att)))?;
-            values.push(*v);
-        }
-        Ok(values)
+        self.attributes
+            .get(attribute)
+            .map(|(values, _)| values[values.len() - 1])
+            .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
     }
 }
