@@ -1,9 +1,10 @@
 [package]
 name = "abe_policy"
-version = "1.0.1"
+version = "2.0.0"
 edition = "2021"
 authors = [
   "Bruno Grieder <bruno.grieder@cosmian.com>",
+  "Théophile Brézot <theophile.brezot@cosmian.com>",
 ]
 description = "Policy and attributes definition for ABE cryptosystems"
 documentation = "https://docs.rs/abe_policy/"

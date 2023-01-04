@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [2.0.0] - 2023-01-04
+### Added
+- `AccessPolicy::to_attribute_combinations()`
+- `Policy::attribute_hybridization_hint()`
+### Changed
+- `PolicyAxis::new()` signature
+- `Policy::add_axis()` signature
+### Fixed
+### Removed
+- `Policy::attribute_current_value()`
+---
+
+---
 ## [1.0.1] - 2022-08-24
 ### Added
 ### Changed
