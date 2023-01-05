@@ -7,7 +7,7 @@ use std::{
 };
 
 /// Hint the user about which kind of encryption to use.
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum EncryptionHint {
     /// Hybridized encryption should be used.
     Hybridized,
