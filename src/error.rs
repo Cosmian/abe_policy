@@ -1,4 +1,5 @@
 //! Define this crate error type.
+
 use thiserror::Error;
 
 /// Crate error type.
@@ -28,4 +29,6 @@ pub enum Error {
     InvalidBooleanExpression(String),
     #[error("invalid attribute: {0}")]
     InvalidAttribute(String),
+    #[error("invalid axis: {0}")]
+    InvalidAxis(String),
 }

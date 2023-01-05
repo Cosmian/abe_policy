@@ -12,7 +12,7 @@ rustfmt:
   stage: prebuild
   cache: {}
   script:
-    - cargo format
+    - cargo fmt
 
 doc:
   stage: prebuild
@@ -27,7 +27,7 @@ clippy:
     # no feature activated
     - cargo clippy --all-targets -- -D warnings
     # all features activated
-    - cargo clippy-all
+    - cargo clippy --all-features --all-targets -- -D warnings
 
 # Security check
 cargo_audit:
