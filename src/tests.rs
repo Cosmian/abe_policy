@@ -50,7 +50,7 @@ fn test_rotate_policy_attributes() -> Result<(), Error> {
     assert_eq!(2, policy.attribute_values(&attributes[0])?.len());
     policy.rotate(&attributes[2])?;
     assert_eq!(2, policy.attribute_values(&attributes[2])?.len());
-    println!("policy: {:?}", policy);
+    println!("policy: {policy:?}");
     for attribute in &attributes {
         assert_eq!(
             policy.attribute_values(attribute)?[0],
