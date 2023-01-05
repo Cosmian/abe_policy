@@ -1,3 +1,4 @@
+---
 image: gitlab.cosmian.com:5000/core/ci-rust:latest
 
 variables:
@@ -45,14 +46,13 @@ cargo_audit:
 #
 # Build base
 #
-.base_compile: &base_compile
+.base_compile:
   stage: build
   cache:
-    key: "${CI_COMMIT_REF_SLUG}"
+    key: ${CI_COMMIT_REF_SLUG}
     policy: pull
     paths:
       - $CARGO_HOME
       - $SCCACHE_DIR
   before_script:
     - sccache -s
-

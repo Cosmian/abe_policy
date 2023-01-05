@@ -16,6 +16,7 @@ impl Attribute {
     ///
     /// - `axis`    : policy axis the attributes belongs to
     /// - `name`    : unique attribute name within this axis
+    #[must_use]
     pub fn new(axis: &str, name: &str) -> Self {
         Self {
             axis: axis.to_owned(),

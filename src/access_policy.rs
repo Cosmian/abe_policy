@@ -44,6 +44,7 @@ impl AccessPolicy {
     ///     AccessPolicy::new("Security Level", "level 4")
     ///         & (AccessPolicy::new("Department", "MKG") | AccessPolicy::new("Department", "FIN"));
     /// ```
+    #[must_use]
     pub fn new(axis: &str, attribute: &str) -> Self {
         Self::Attr(Attribute::new(axis, attribute))
     }
@@ -73,7 +74,7 @@ impl AccessPolicy {
 
     /// Generates an access policy from a map of policy access names to policy
     /// attributes. The axes are `ORed` between each others while the attributes
-    /// of each axis are `ANDed`.
+    /// of each axis are `AND`ed.
     ///
     /// ```
     /// use std::collections::HashMap;
@@ -363,6 +364,7 @@ impl AccessPolicy {
     /// Retrieves all the attributes present in this access policy.
     ///
     /// The attributes are sorted. This is useful for comparisons.
+    #[must_use]
     pub fn attributes(&self) -> Vec<Attribute> {
         let mut attributes = self._attributes();
         attributes.sort();
@@ -438,7 +440,7 @@ impl AccessPolicy {
                 res.extend(combinations_right);
                 Ok(res)
             }
-            AccessPolicy::All => Ok(vec![vec![]]),
+            Self::All => Ok(vec![vec![]]),
         }
     }
 }
