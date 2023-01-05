@@ -5,18 +5,27 @@ use std::{
     fmt::{Debug, Display},
 };
 
+/// Hint the user about which kind of encryption to use.
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+pub enum EncryptionHint {
+    /// Hybridized encryption should be used.
+    Hybridized,
+    /// Classic encryption should be used.
+    Classic,
+}
+
 /// Defines a policy axis by its name and its underlying attribute properties.
 /// An attribute property defines its name and a hint about whether hybridized
 /// encryption should be used for it (hint set to `true` if this is the case).
 ///
 /// If `hierarchical` is set to `true`, we assume a lexicographical order based
 /// on the attribute name.
-#[derive(Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyAxis {
     /// Axis name
     pub name: String,
     /// Names of the axis attributes and hybridized encryption hints
-    pub attribute_properties: Vec<(String, bool)>,
+    pub attribute_properties: Vec<(String, EncryptionHint)>,
     /// `true` if the axis is hierarchical
     pub hierarchical: bool,
 }
@@ -29,12 +38,16 @@ impl PolicyAxis {
     /// - `attribute_properties`    : axis attribute properties
     /// - `hierarchical`            : set to `true` if the axis is hierarchical
     #[must_use]
-    pub fn new(name: &str, attribute_properties: Vec<(&str, bool)>, hierarchical: bool) -> Self {
+    pub fn new(
+        name: &str,
+        attribute_properties: Vec<(&str, EncryptionHint)>,
+        hierarchical: bool,
+    ) -> Self {
         Self {
             name: name.to_string(),
             attribute_properties: attribute_properties
                 .into_iter()
-                .map(|(axis_name, is_hybridized)| (axis_name.to_string(), is_hybridized))
+                .map(|(axis_name, hint)| (axis_name.to_string(), hint))
                 .collect(),
             hierarchical,
         }
@@ -65,7 +78,7 @@ pub struct Policy {
     /// and a boolean defining whether or not this axis is hierarchical.
     pub axes: HashMap<String, (Vec<String>, bool)>,
     /// Maps an attribute to its values and its hybridization hint.
-    pub attributes: HashMap<Attribute, (Vec<u32>, bool)>,
+    pub attributes: HashMap<Attribute, (Vec<u32>, EncryptionHint)>,
 }
 
 impl Display for Policy {
@@ -158,7 +171,10 @@ impl Policy {
     }
 
     /// Returns the hybridization hint of the given attribute.
-    pub fn attribute_hybridization_hint(&self, attribute: &Attribute) -> Result<bool, Error> {
+    pub fn attribute_hybridization_hint(
+        &self,
+        attribute: &Attribute,
+    ) -> Result<EncryptionHint, Error> {
         self.attributes
             .get(attribute)
             .map(|(_, is_hybridized)| *is_hybridized)
