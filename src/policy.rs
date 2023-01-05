@@ -3,15 +3,29 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::{Debug, Display},
+    ops::BitOr,
 };
 
 /// Hint the user about which kind of encryption to use.
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum EncryptionHint {
     /// Hybridized encryption should be used.
     Hybridized,
     /// Classic encryption should be used.
     Classic,
+}
+
+impl BitOr for EncryptionHint {
+    type Output = Self;
+
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        if self == Self::Hybridized || rhs == Self::Hybridized {
+            Self::Hybridized
+        } else {
+            Self::Classic
+        }
+    }
 }
 
 /// Defines a policy axis by its name and its underlying attribute properties.
