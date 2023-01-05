@@ -10,8 +10,8 @@ pub enum Error {
     #[error("{} is missing{}",
         .item.clone().unwrap_or_else(|| "attribute".to_string()),
         match .axis_name {
-            Some(axis) => format!(" in axis {}", axis),
-            None => "".to_string(),
+            Some(axis) => format!(" in axis {axis}"),
+            None => String::new(),
     })]
     MissingAttribute {
         item: Option<String>,
