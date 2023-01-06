@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.0] - 2023-01-06
+
+### Added
+
+- interfaces
+
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
 ## [2.0.0] - 2023-01-04
 
 ### Added

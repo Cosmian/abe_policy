@@ -1,4 +1,4 @@
-use crate::{error::Error, Attribute, EncryptionHint, Policy, PolicyAxis};
+use crate::{error::Error, policy::Policy, Attribute, EncryptionHint, PolicyAxis};
 
 fn policy() -> Result<Policy, Error> {
     let sec_level = PolicyAxis::new(

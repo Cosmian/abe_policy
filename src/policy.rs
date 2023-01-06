@@ -80,10 +80,32 @@ impl PolicyAxis {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct LegacyPolicy {
+    /// Last value taken by the attriute.
+    pub(crate) last_attribute_value: u32,
+    /// Maximum attribute value. Defines a maximum number of attribute
+    /// creations (revocations + addition).
+    pub max_attribute_creations: u32,
+    /// Policy axes: maps axes name to the list of associated attribute names
+    /// and a boolean defining whether or not this axis is hierarchical.
+    pub axes: HashMap<String, (Vec<String>, bool)>,
+    /// Maps an attribute to its values and its hybridization hint.
+    pub attributes: HashMap<Attribute, Vec<u32>>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub enum PolicyVersion {
+    V1,
+    V2,
+}
+
 /// A policy is a set of policy axes. A fixed number of attribute creations
 /// (revocations + additions) is allowed.
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Policy {
+    /// Version number
+    pub version: PolicyVersion,
     /// Last value taken by the attriute.
     pub(crate) last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
@@ -107,11 +129,38 @@ impl Display for Policy {
 }
 
 impl Policy {
+    /// Converts the given string into a Policy. Does not fail if the given
+    /// string uses the legacy format.
+    pub fn parse_and_convert(string: &str) -> Result<Self, Error> {
+        match serde_json::from_str(string) {
+            Ok(policy) => Ok(policy),
+            Err(e) => {
+                if let Ok(policy) = serde_json::from_str::<LegacyPolicy>(string) {
+                    Ok(Policy {
+                        version: PolicyVersion::V2,
+                        max_attribute_creations: policy.max_attribute_creations,
+                        last_attribute_value: policy.last_attribute_value,
+                        axes: policy.axes,
+                        attributes: policy
+                            .attributes
+                            .into_iter()
+                            .map(|(name, values)| (name, (values, EncryptionHint::Classic)))
+                            .collect(),
+                    })
+                } else {
+                    Err(Error::DeserializationError(e.to_string()))
+                }
+            }
+        }
+    }
+
     /// Generates a new policy object with the given number of attribute
     /// creation (revocation + addition) allowed.
+    #[inline]
     #[must_use]
     pub fn new(nb_creations: u32) -> Self {
         Self {
+            version: PolicyVersion::V2,
             last_attribute_value: 0,
             max_attribute_creations: nb_creations,
             axes: HashMap::new(),
@@ -120,7 +169,7 @@ impl Policy {
     }
 
     /// Returns the remaining number of allowed attribute creations (additions + rotations).
-    #[must_use]
+    #[inline]
     pub fn remaining_attribute_creations(&self) -> u32 {
         self.max_attribute_creations - self.last_attribute_value
     }
@@ -173,6 +222,7 @@ impl Policy {
     }
 
     /// Returns the list of Attributes of this Policy.
+    #[inline]
     #[must_use]
     pub fn attributes(&self) -> Vec<Attribute> {
         self.attributes.keys().cloned().collect::<Vec<Attribute>>()
@@ -180,6 +230,7 @@ impl Policy {
 
     /// Returns the list of all values given to this attribute over rotations.
     /// The current value is returned first
+    #[inline]
     pub fn attribute_values(&self, attribute: &Attribute) -> Result<Vec<u32>, Error> {
         self.attributes
             .get(attribute)
@@ -188,6 +239,7 @@ impl Policy {
     }
 
     /// Returns the hybridization hint of the given attribute.
+    #[inline]
     pub fn attribute_hybridization_hint(
         &self,
         attribute: &Attribute,
@@ -199,6 +251,7 @@ impl Policy {
     }
 
     /// Retrieves the current value of an attribute.
+    #[inline]
     pub fn attribute_current_value(&self, attribute: &Attribute) -> Result<u32, Error> {
         self.attributes
             .get(attribute)

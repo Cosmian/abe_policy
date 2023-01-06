@@ -15,7 +15,10 @@ mod policy;
 pub use access_policy::AccessPolicy;
 pub use attribute::{Attribute, Attributes};
 pub use error::Error;
-pub use policy::{EncryptionHint, Policy, PolicyAxis};
+pub use policy::{EncryptionHint, LegacyPolicy, Policy, PolicyAxis};
+
+#[cfg(feature = "interface")]
+pub mod interfaces;
 
 #[cfg(test)]
 mod tests;

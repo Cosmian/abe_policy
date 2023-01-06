@@ -1,6 +1,6 @@
 [package]
 name = "abe_policy"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
 authors = [
   "Bruno Grieder <bruno.grieder@cosmian.com>",
@@ -11,10 +11,19 @@ documentation = "https://docs.rs/abe_policy/"
 license = "MIT/Apache-2.0"
 repository = "https://github.com/Cosmian/abe_policy"
 
+[features]
+interface=[]
+ffi=["interface"]
+wasm_bindgen=["interface"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+js-sys = "0.3.60"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
+wasm-bindgen = "0.2.83"
+
+[lib]
+crate-type = ["cdylib", "rlib"]

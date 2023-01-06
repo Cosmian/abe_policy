@@ -1,4 +1,4 @@
-use crate::{Attribute, Error, Policy};
+use crate::{policy::Policy, Attribute, Error};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
