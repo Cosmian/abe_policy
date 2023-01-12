@@ -4,13 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [2.1.0] - 2023-01-06
+## [2.1.0] - 2023-01-12
 
 ### Added
 
-- interfaces
+- wasm_bindgen interface
 
 ### Changed
+
+- `Policy` format
 
 ### Fixed
 
