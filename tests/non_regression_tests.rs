@@ -1,5 +1,4 @@
 use abe_policy::{EncryptionHint, Error, LegacyPolicy, Policy, PolicyAxis};
-use std::{fs::File, io::Read, path::Path};
 
 /// Generate a new policy.
 fn policy() -> Result<Policy, Error> {

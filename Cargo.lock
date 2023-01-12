@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "abe_policy"
-version = "3.0.0"
+version = "2.1.0"
 dependencies = [
  "js-sys",
  "serde",

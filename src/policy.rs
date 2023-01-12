@@ -94,10 +94,9 @@ pub struct LegacyPolicy {
     pub attributes: HashMap<Attribute, Vec<u32>>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PolicyVersion {
     V1,
-    V2,
 }
 
 /// A policy is a set of policy axes. A fixed number of attribute creations
@@ -137,7 +136,7 @@ impl Policy {
             Err(e) => {
                 if let Ok(policy) = serde_json::from_str::<LegacyPolicy>(string) {
                     Ok(Policy {
-                        version: PolicyVersion::V2,
+                        version: PolicyVersion::V1,
                         max_attribute_creations: policy.max_attribute_creations,
                         last_attribute_value: policy.last_attribute_value,
                         axes: policy.axes,
@@ -160,7 +159,7 @@ impl Policy {
     #[must_use]
     pub fn new(nb_creations: u32) -> Self {
         Self {
-            version: PolicyVersion::V2,
+            version: PolicyVersion::V1,
             last_attribute_value: 0,
             max_attribute_creations: nb_creations,
             axes: HashMap::new(),
