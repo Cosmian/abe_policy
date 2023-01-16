@@ -1,4 +1,4 @@
-use crate::{EncryptionHint, Policy, PolicyAxis};
+use crate::{EncryptionHint, Error, Policy, PolicyAxis};
 use js_sys::{Array, Boolean, JsString, Reflect};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -58,12 +58,8 @@ pub fn webassembly_policy(nb_creations: u32) -> Result<String, JsValue> {
 
 #[wasm_bindgen]
 pub fn webassembly_add_axis(policy: String, axis: String) -> Result<String, JsValue> {
-    let mut policy =
-        Policy::parse_and_convert(&policy).map_err(|e| JsValue::from_str(&e.to_string()))?;
-
-    let axis: PolicyAxis =
-        serde_json::from_str(&axis).map_err(|e| JsValue::from_str(&e.to_string()))?;
-    policy.add_axis(axis)?;
+    let mut policy = Policy::parse_and_convert(&policy)?;
+    policy.add_axis(serde_json::from_str(&axis).map_err(Error::DeserializationError)?)?;
     serde_json::to_string(&policy).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -78,16 +74,13 @@ pub fn webassembly_rotate_attributes(
     policy: String,
 ) -> Result<String, JsValue> {
     let attributes = Array::from(&JsValue::from(attributes));
-    let mut policy = Policy::parse_and_convert(&policy)
-        .map_err(|e| JsValue::from_str(&format!("Error deserializing policy: {e}")))?;
+    let mut policy = Policy::parse_and_convert(&policy)?;
 
     // Rotate attributes of the current policy
     for attr in attributes.values() {
         let attribute = serde_json::from_str(String::from(JsString::from(attr?)).as_str())
-            .map_err(|e| JsValue::from_str(&e.to_string()))?;
-        policy
-            .rotate(&attribute)
-            .map_err(|e| JsValue::from_str(&format!("Error rotating attribute: {e}")))?;
+            .map_err(Error::DeserializationError)?;
+        policy.rotate(&attribute)?;
     }
 
     Ok(policy.to_string())

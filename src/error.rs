@@ -34,7 +34,7 @@ pub enum Error {
     #[error("invalid axis: {0}")]
     InvalidAxis(String),
     #[error("deserialization error: {0}")]
-    DeserializationError(String),
+    DeserializationError(serde_json::Error),
 }
 
 #[cfg(feature = "wasm_bindgen")]

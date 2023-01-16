@@ -147,7 +147,9 @@ impl Policy {
                             .collect(),
                     })
                 } else {
-                    Err(Error::DeserializationError(e.to_string()))
+                    // Return the `Policy` deserialization error message instead of the
+                    // `LegacyPolicy` one since this is the one that should be used.
+                    Err(Error::DeserializationError(e))
                 }
             }
         }
