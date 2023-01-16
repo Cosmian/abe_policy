@@ -396,14 +396,14 @@ impl AccessPolicy {
     ) -> Result<Vec<Vec<Attribute>>, Error> {
         match self {
             Self::Attr(attr) => {
-                let (attribute_names, is_hierarchical) = policy
+                let axis_parameters = policy
                     .axes
                     .get(&attr.axis)
                     .ok_or_else(|| Error::InvalidAxis(attr.axis.clone()))?;
                 let mut res = vec![vec![attr.clone()]];
-                if *is_hierarchical && follow_hierarchical_axes {
+                if axis_parameters.is_hierarchical && follow_hierarchical_axes {
                     // add attribute values for all attributes below the given one
-                    for name in attribute_names {
+                    for name in &axis_parameters.attribute_names {
                         if *name == attr.name {
                             break;
                         }

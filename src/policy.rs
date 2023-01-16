@@ -81,6 +81,18 @@ impl PolicyAxis {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AxesParameters {
+    pub attribute_names: Vec<String>,
+    pub is_hierarchical: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AttributesParameters {
+    pub values: Vec<u32>,
+    pub encryption_hint: EncryptionHint,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LegacyPolicy {
     /// Last value taken by the attriute.
     pub(crate) last_attribute_value: u32,
@@ -89,7 +101,7 @@ pub struct LegacyPolicy {
     pub max_attribute_creations: u32,
     /// Policy axes: maps axes name to the list of associated attribute names
     /// and a boolean defining whether or not this axis is hierarchical.
-    pub axes: HashMap<String, (Vec<String>, bool)>,
+    pub axes: HashMap<String, AxesParameters>,
     /// Maps an attribute to its values and its hybridization hint.
     pub attributes: HashMap<Attribute, Vec<u32>>,
 }
@@ -112,9 +124,9 @@ pub struct Policy {
     pub max_attribute_creations: u32,
     /// Policy axes: maps axes name to the list of associated attribute names
     /// and a boolean defining whether or not this axis is hierarchical.
-    pub axes: HashMap<String, (Vec<String>, bool)>,
+    pub axes: HashMap<String, AxesParameters>,
     /// Maps an attribute to its values and its hybridization hint.
-    pub attributes: HashMap<Attribute, (Vec<u32>, EncryptionHint)>,
+    pub attributes: HashMap<Attribute, AttributesParameters>,
 }
 
 impl Display for Policy {
@@ -135,6 +147,7 @@ impl Policy {
             Ok(policy) => Ok(policy),
             Err(e) => {
                 if let Ok(policy) = serde_json::from_str::<LegacyPolicy>(string) {
+                    // Convert the legacy format to the current one.
                     Ok(Policy {
                         version: PolicyVersion::V1,
                         max_attribute_creations: policy.max_attribute_creations,
@@ -143,7 +156,15 @@ impl Policy {
                         attributes: policy
                             .attributes
                             .into_iter()
-                            .map(|(name, values)| (name, (values, EncryptionHint::Classic)))
+                            .map(|(name, values)| {
+                                (
+                                    name,
+                                    AttributesParameters {
+                                        values,
+                                        encryption_hint: EncryptionHint::Classic,
+                                    },
+                                )
+                            })
                             .collect(),
                     })
                 } else {
@@ -190,7 +211,7 @@ impl Policy {
         }
         let mut axis_attributes = Vec::with_capacity(axis.attribute_properties.len());
 
-        for (attr_name, is_hybridized) in axis.attribute_properties {
+        for (attr_name, encryption_hint) in axis.attribute_properties {
             self.last_attribute_value += 1;
             axis_attributes.push(attr_name.clone());
             let attribute = (axis.name.clone(), attr_name).into();
@@ -199,12 +220,21 @@ impl Policy {
             }
             self.attributes.insert(
                 attribute,
-                ([self.last_attribute_value].into(), is_hybridized),
+                AttributesParameters {
+                    values: [self.last_attribute_value].into(),
+                    encryption_hint,
+                },
             );
         }
 
-        self.axes
-            .insert(axis.name, (axis_attributes, axis.hierarchical));
+        self.axes.insert(
+            axis.name,
+            AxesParameters {
+                attribute_names: axis_attributes,
+                is_hierarchical: axis.hierarchical,
+            },
+        );
+
         Ok(())
     }
 
@@ -213,9 +243,9 @@ impl Policy {
     pub fn rotate(&mut self, attr: &Attribute) -> Result<(), Error> {
         if self.last_attribute_value == self.max_attribute_creations {
             Err(Error::CapacityOverflow)
-        } else if let Some((heap, _)) = self.attributes.get_mut(attr) {
+        } else if let Some(attribute_parameters) = self.attributes.get_mut(attr) {
             self.last_attribute_value += 1;
-            heap.push(self.last_attribute_value);
+            attribute_parameters.values.push(self.last_attribute_value);
             Ok(())
         } else {
             Err(Error::AttributeNotFound(attr.to_string()))
@@ -235,7 +265,7 @@ impl Policy {
     pub fn attribute_values(&self, attribute: &Attribute) -> Result<Vec<u32>, Error> {
         self.attributes
             .get(attribute)
-            .map(|(values, _)| values.iter().rev().copied().collect())
+            .map(|attribute_parameters| attribute_parameters.values.iter().rev().copied().collect())
             .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
     }
 
@@ -247,7 +277,7 @@ impl Policy {
     ) -> Result<EncryptionHint, Error> {
         self.attributes
             .get(attribute)
-            .map(|(_, is_hybridized)| *is_hybridized)
+            .map(|attribute_parameters| attribute_parameters.encryption_hint)
             .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
     }
 
@@ -256,7 +286,9 @@ impl Policy {
     pub fn attribute_current_value(&self, attribute: &Attribute) -> Result<u32, Error> {
         self.attributes
             .get(attribute)
-            .map(|(values, _)| values[values.len() - 1])
+            .map(|attribute_parameters| {
+                attribute_parameters.values[attribute_parameters.values.len() - 1]
+            })
             .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
     }
 }
