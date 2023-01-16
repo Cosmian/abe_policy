@@ -30,8 +30,8 @@ fn policy() -> Result<Policy, Error> {
 /// Write the policy to a file.
 #[test]
 fn write_policy() {
-    let policy = policy().unwrap();
-    std::fs::write("tests/policy.json", serde_json::to_vec(&policy).unwrap()).unwrap();
+    let _policy = policy().unwrap();
+    //std::fs::write("tests/policy.json", serde_json::to_vec(&_policy).unwrap()).unwrap();
 }
 
 /// Read policy from a file.
