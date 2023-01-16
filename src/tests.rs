@@ -1,7 +1,7 @@
-use crate::{error::Error, Attribute, EncryptionHint, Policy, PolicyAxis};
+use crate::{error::Error, policy::Policy, Attribute, EncryptionHint, PolicyAxis};
 
 fn policy() -> Result<Policy, Error> {
-    let sec_level = PolicyAxis::new(
+    let security_level = PolicyAxis::new(
         "Security Level",
         vec![
             ("Protected", EncryptionHint::Classic),
@@ -21,16 +21,16 @@ fn policy() -> Result<Policy, Error> {
         false,
     );
     let mut policy = Policy::new(100);
-    policy.add_axis(sec_level.clone())?;
+    policy.add_axis(security_level.clone())?;
     policy.add_axis(department.clone())?;
     // check that policy
     let attributes = policy.attributes();
-    assert_eq!(sec_level.len() + department.len(), attributes.len());
-    for (att, _) in &sec_level.attribute_properties {
-        assert!(attributes.contains(&Attribute::new("Security Level", att)))
+    assert_eq!(security_level.len() + department.len(), attributes.len());
+    for properties in &security_level.attributes_properties {
+        assert!(attributes.contains(&Attribute::new("Security Level", &properties.name)))
     }
-    for (att, _) in &department.attribute_properties {
-        assert!(attributes.contains(&Attribute::new("Department", att)))
+    for properties in &department.attributes_properties {
+        assert!(attributes.contains(&Attribute::new("Department", &properties.name)))
     }
     for attribute in &attributes {
         assert_eq!(

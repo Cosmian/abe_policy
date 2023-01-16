@@ -1,6 +1,8 @@
 //! Define this crate error type.
 
 use thiserror::Error;
+#[cfg(feature = "wasm_bindgen")]
+use wasm_bindgen::JsValue;
 
 /// Crate error type.
 #[derive(Error, Debug)]
@@ -31,4 +33,13 @@ pub enum Error {
     InvalidAttribute(String),
     #[error("invalid axis: {0}")]
     InvalidAxis(String),
+    #[error("deserialization error: {0}")]
+    DeserializationError(serde_json::Error),
+}
+
+#[cfg(feature = "wasm_bindgen")]
+impl From<Error> for JsValue {
+    fn from(e: Error) -> Self {
+        JsValue::from_str(&e.to_string())
+    }
 }
