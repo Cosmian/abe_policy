@@ -72,7 +72,7 @@ pub fn webassembly_add_axis(policy: Vec<u8>, axis: String) -> Result<String, JsV
 pub fn webassembly_rotate_attributes(
     attributes: Attributes,
     policy: Vec<u8>,
-) -> Result<String, JsValue> {
+) -> Result<Vec<u8>, JsValue> {
     let attributes = Array::from(&JsValue::from(attributes));
     let mut policy = Policy::parse_and_convert(&policy)?;
 
@@ -83,5 +83,5 @@ pub fn webassembly_rotate_attributes(
         policy.rotate(&attribute)?;
     }
 
-    Ok(policy.to_string())
+    Ok(serde_json::to_vec(&policy).map_err(Error::DeserializationError)?)
 }
