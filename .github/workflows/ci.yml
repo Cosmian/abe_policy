@@ -1,53 +1,41 @@
 ---
 name: CI checks
 
-on: [push, pull_request]
+on: push
 
 jobs:
-  lint:
-    name: Lint
+  cargo-nursery:
+    uses: Cosmian/reusable_workflows/.github/workflows/cargo-nursery.yml@main
+    with:
+      toolchain: stable
+  wasm:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: wasm32-unknown-unknown
           override: true
-          components: rustfmt, clippy
-
-      # Ensure all code has been formatted with rustfmt
-      - name: Check formatting
+      - name: Build
         uses: actions-rs/cargo@v1
         with:
-          command: fmt
-          args: -- --check --color always
-      - name: Static analysis all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-features -- -D warnings
-      - name: Test all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+          command: build
+          args: --verbose --features wasm_bindgen --target wasm32-unknown-unknown
 
-  doc-links:
-    name: Stable lint
-    runs-on: ubuntu-latest
+  cargo-publish:
+    needs:
+      - cargo-nursery
+      - wasm
+    uses: Cosmian/reusable_workflows/.github/workflows/cargo-publish.yml@main
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    with:
+      toolchain: stable
+    secrets: inherit
 
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      # Ensure intra-documentation links all resolve correctly
-      # Requires #![deny(intra_doc_link_resolution_failure)] in crate.
-      - name: Check intra-doc links
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --all-features
+  cleanup:
+    needs:
+      - cargo-publish
+    uses: Cosmian/reusable_workflows/.github/workflows/cleanup_cache.yml@main
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    secrets: inherit
