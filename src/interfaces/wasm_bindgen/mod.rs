@@ -44,7 +44,7 @@ pub fn webassembly_policy_axis(
         &name,
         attribute_properties
             .iter()
-            .map(|(name, hint)| (name.as_str(), *hint))
+            .map(|(name, encryption_hint)| (name.as_str(), *encryption_hint))
             .collect(),
         is_hierarchical,
     ))
@@ -57,7 +57,7 @@ pub fn webassembly_policy(nb_creations: u32) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn webassembly_add_axis(policy: String, axis: String) -> Result<String, JsValue> {
+pub fn webassembly_add_axis(policy: Vec<u8>, axis: String) -> Result<String, JsValue> {
     let mut policy = Policy::parse_and_convert(&policy)?;
     policy.add_axis(serde_json::from_str(&axis).map_err(Error::DeserializationError)?)?;
     serde_json::to_string(&policy).map_err(|e| JsValue::from_str(&e.to_string()))
@@ -71,7 +71,7 @@ pub fn webassembly_add_axis(policy: String, axis: String) -> Result<String, JsVa
 #[wasm_bindgen]
 pub fn webassembly_rotate_attributes(
     attributes: Attributes,
-    policy: String,
+    policy: Vec<u8>,
 ) -> Result<String, JsValue> {
     let attributes = Array::from(&JsValue::from(attributes));
     let mut policy = Policy::parse_and_convert(&policy)?;

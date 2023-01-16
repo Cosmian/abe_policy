@@ -28,6 +28,12 @@ impl BitOr for EncryptionHint {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AxisAttributePorperties {
+    pub name: String,
+    pub encryption_hint: EncryptionHint,
+}
+
 /// Defines a policy axis by its name and its underlying attribute properties.
 /// An attribute property defines its name and a hint about whether hybridized
 /// encryption should be used for it (hint set to `true` if this is the case).
@@ -39,7 +45,7 @@ pub struct PolicyAxis {
     /// Axis name
     pub name: String,
     /// Names of the axis attributes and hybridized encryption hints
-    pub attribute_properties: Vec<(String, EncryptionHint)>,
+    pub attributes_properties: Vec<AxisAttributePorperties>,
     /// `true` if the axis is hierarchical
     pub hierarchical: bool,
 }
@@ -54,14 +60,17 @@ impl PolicyAxis {
     #[must_use]
     pub fn new(
         name: &str,
-        attribute_properties: Vec<(&str, EncryptionHint)>,
+        attributes_properties: Vec<(&str, EncryptionHint)>,
         hierarchical: bool,
     ) -> Self {
         Self {
             name: name.to_string(),
-            attribute_properties: attribute_properties
+            attributes_properties: attributes_properties
                 .into_iter()
-                .map(|(axis_name, hint)| (axis_name.to_string(), hint))
+                .map(|(axis_name, encryption_hint)| AxisAttributePorperties {
+                    name: axis_name.to_string(),
+                    encryption_hint,
+                })
                 .collect(),
             hierarchical,
         }
@@ -70,24 +79,24 @@ impl PolicyAxis {
     /// Returns the number of attributes belonging to this axis.
     #[must_use]
     pub fn len(&self) -> usize {
-        self.attribute_properties.len()
+        self.attributes_properties.len()
     }
 
     /// Return `true` if the attribute list is empty
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.attribute_properties.is_empty()
+        self.attributes_properties.is_empty()
     }
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct AxesParameters {
+pub struct PolicyAxesParameters {
     pub attribute_names: Vec<String>,
     pub is_hierarchical: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct AttributesParameters {
+pub struct PolicyAttributesParameters {
     pub values: Vec<u32>,
     pub encryption_hint: EncryptionHint,
 }
@@ -101,7 +110,7 @@ pub struct LegacyPolicy {
     pub max_attribute_creations: u32,
     /// Policy axes: maps axes name to the list of associated attribute names
     /// and a boolean defining whether or not this axis is hierarchical.
-    pub axes: HashMap<String, AxesParameters>,
+    pub axes: HashMap<String, PolicyAxesParameters>,
     /// Maps an attribute to its values and its hybridization hint.
     pub attributes: HashMap<Attribute, Vec<u32>>,
 }
@@ -124,9 +133,9 @@ pub struct Policy {
     pub max_attribute_creations: u32,
     /// Policy axes: maps axes name to the list of associated attribute names
     /// and a boolean defining whether or not this axis is hierarchical.
-    pub axes: HashMap<String, AxesParameters>,
+    pub axes: HashMap<String, PolicyAxesParameters>,
     /// Maps an attribute to its values and its hybridization hint.
-    pub attributes: HashMap<Attribute, AttributesParameters>,
+    pub attributes: HashMap<Attribute, PolicyAttributesParameters>,
 }
 
 impl Display for Policy {
@@ -142,11 +151,11 @@ impl Display for Policy {
 impl Policy {
     /// Converts the given string into a Policy. Does not fail if the given
     /// string uses the legacy format.
-    pub fn parse_and_convert(string: &str) -> Result<Self, Error> {
-        match serde_json::from_str(string) {
+    pub fn parse_and_convert(bytes: &[u8]) -> Result<Self, Error> {
+        match serde_json::from_slice(bytes) {
             Ok(policy) => Ok(policy),
             Err(e) => {
-                if let Ok(policy) = serde_json::from_str::<LegacyPolicy>(string) {
+                if let Ok(policy) = serde_json::from_slice::<LegacyPolicy>(bytes) {
                     // Convert the legacy format to the current one.
                     Ok(Policy {
                         version: PolicyVersion::V1,
@@ -159,7 +168,7 @@ impl Policy {
                             .map(|(name, values)| {
                                 (
                                     name,
-                                    AttributesParameters {
+                                    PolicyAttributesParameters {
                                         values,
                                         encryption_hint: EncryptionHint::Classic,
                                     },
@@ -209,27 +218,27 @@ impl Policy {
         if self.axes.get(&axis.name).is_some() {
             return Err(Error::ExistingPolicy(axis.name));
         }
-        let mut axis_attributes = Vec::with_capacity(axis.attribute_properties.len());
+        let mut axis_attributes = Vec::with_capacity(axis.attributes_properties.len());
 
-        for (attr_name, encryption_hint) in axis.attribute_properties {
+        for properties in axis.attributes_properties {
             self.last_attribute_value += 1;
-            axis_attributes.push(attr_name.clone());
-            let attribute = (axis.name.clone(), attr_name).into();
+            axis_attributes.push(properties.name.clone());
+            let attribute = (axis.name.clone(), properties.name.clone()).into();
             if self.attributes.get(&attribute).is_some() {
                 return Err(Error::ExistingPolicy(format!("{attribute:?}")));
             }
             self.attributes.insert(
                 attribute,
-                AttributesParameters {
+                PolicyAttributesParameters {
                     values: [self.last_attribute_value].into(),
-                    encryption_hint,
+                    encryption_hint: properties.encryption_hint,
                 },
             );
         }
 
         self.axes.insert(
             axis.name,
-            AxesParameters {
+            PolicyAxesParameters {
                 attribute_names: axis_attributes,
                 is_hierarchical: axis.hierarchical,
             },

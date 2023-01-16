@@ -31,19 +31,19 @@ fn policy() -> Result<Policy, Error> {
 #[test]
 fn write_policy() {
     let policy = policy().unwrap();
-    std::fs::write("tests/policy.json", serde_json::to_string(&policy).unwrap()).unwrap();
+    std::fs::write("tests/policy.json", serde_json::to_vec(&policy).unwrap()).unwrap();
 }
 
 /// Read policy from a file.
 #[test]
 fn read_policy() {
     // read policy
-    let policy_str = include_str!("policy.json");
-    let _policy = serde_json::from_str::<Policy>(policy_str).unwrap();
+    let policy_str = include_bytes!("policy.json");
+    let _policy = serde_json::from_slice::<Policy>(policy_str).unwrap();
 
     // read legacy policy
-    let legacy_policy_str = include_str!("legacy_policy.json");
-    let _legacy_policy = serde_json::from_str::<LegacyPolicy>(legacy_policy_str).unwrap();
+    let legacy_policy_str = include_bytes!("legacy_policy.json");
+    let _legacy_policy = serde_json::from_slice::<LegacyPolicy>(legacy_policy_str).unwrap();
 
     // read legacy policy as current policy
     let _policy = Policy::parse_and_convert(legacy_policy_str).unwrap();
