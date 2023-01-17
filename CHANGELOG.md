@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [3.0.2] - 2023-01-17
+
+### Added
+
+- `webassembly_parse_boolean_access_policy`
+
+### Changed
+
+- `webassembly_policy` -> return `Vec<u8>`
+- `webassembly_add_axis` -> return `Vec<u8>`
+
+### Fixed
+
+### Removed
+
+---
+
 ## [3.0.1] - 2023-01-17
 
 ### Added
@@ -15,8 +32,6 @@ All notable changes to this project will be documented in this file.
 - `webassembly_rotate`
 
 ### Removed
-
----
 
 ---
 
