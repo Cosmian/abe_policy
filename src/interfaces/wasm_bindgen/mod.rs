@@ -1,4 +1,4 @@
-use crate::{EncryptionHint, Error, Policy, PolicyAxis};
+use crate::{Attribute, EncryptionHint, Error, Policy, PolicyAxis};
 use js_sys::{Array, Boolean, JsString, Reflect};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -78,8 +78,7 @@ pub fn webassembly_rotate_attributes(
 
     // Rotate attributes of the current policy
     for attr in attributes.values() {
-        let attribute = serde_json::from_str(String::from(JsString::from(attr?)).as_str())
-            .map_err(Error::DeserializationError)?;
+        let attribute = Attribute::try_from(String::from(JsString::from(attr?)).as_str())?;
         policy.rotate(&attribute)?;
     }
 

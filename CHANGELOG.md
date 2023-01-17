@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [3.0.1] - 2023-01-17
+
+### Added
+
+### Changed
+
+### Fixed
+
+- `webassembly_rotate`
+
+### Removed
+
+---
+
+---
+
 ## [3.0.0] - 2023-01-17
 
 ### Added
