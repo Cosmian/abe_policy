@@ -1,6 +1,6 @@
 [package]
 name = "abe_policy"
-version = "3.0.0"
+version = "3.0.1"
 edition = "2021"
 authors = [
   "Bruno Grieder <bruno.grieder@cosmian.com>",
