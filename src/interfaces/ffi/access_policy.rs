@@ -13,12 +13,12 @@ pub unsafe extern "C" fn h_parse_boolean_access_policy(
     access_policy_len: *mut c_int,
     boolean_expression_ptr: *const c_char,
 ) -> c_int {
-    let expr = read_ffi_string!("boolean_expression", boolean_expression_ptr);
+    let expr = ffi_read_string!("boolean_expression", boolean_expression_ptr);
     let access_policy = ffi_unwrap!(AccessPolicy::from_boolean_expression(&expr));
 
     let access_policy_bytes = ffi_unwrap!(serde_json::to_vec(&access_policy));
 
-    write_ffi_bytes!(
+    ffi_write_bytes!(
         "access policy",
         &access_policy_bytes,
         access_policy_ptr,

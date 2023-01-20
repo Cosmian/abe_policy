@@ -10,7 +10,7 @@ pub unsafe extern "C" fn h_policy(
 ) -> c_int {
     let policy = Policy::new(max_attribute_creations as u32);
     let policy_bytes = ffi_unwrap!(serde_json::to_vec(&policy));
-    write_ffi_bytes!("policy", &policy_bytes, policy_ptr, policy_len);
+    ffi_write_bytes!("policy", &policy_bytes, policy_ptr, policy_len);
     0
 }
 
@@ -22,14 +22,14 @@ pub unsafe extern "C" fn h_add_policy_axis(
     current_policy_len: c_int,
     axis_ptr: *mut c_char,
 ) -> c_int {
-    let policy_bytes = read_ffi_bytes!("current policy", current_policy_ptr, current_policy_len);
+    let policy_bytes = ffi_read_bytes!("current policy", current_policy_ptr, current_policy_len);
     let mut policy = ffi_unwrap!(Policy::parse_and_convert(policy_bytes));
-    let axis_string = read_ffi_string!("axis", axis_ptr);
+    let axis_string = ffi_read_string!("axis", axis_ptr);
     let axis = ffi_unwrap!(serde_json::from_str(&axis_string));
 
     ffi_unwrap!(policy.add_axis(axis));
 
-    write_ffi_bytes!(
+    ffi_write_bytes!(
         "updated policy",
         &ffi_unwrap!(serde_json::to_vec(&policy)),
         updated_policy_ptr,
@@ -47,14 +47,14 @@ pub unsafe extern "C" fn h_rotate_attribute(
     current_policy_len: c_int,
     axis_ptr: *const c_char,
 ) -> c_int {
-    let policy_bytes = read_ffi_bytes!("current policy", current_policy_ptr, current_policy_len);
+    let policy_bytes = ffi_read_bytes!("current policy", current_policy_ptr, current_policy_len);
     let mut policy = ffi_unwrap!(Policy::parse_and_convert(policy_bytes));
-    let attr_string = read_ffi_string!("axis", axis_ptr);
+    let attr_string = ffi_read_string!("axis", axis_ptr);
     let attr = ffi_unwrap!(Attribute::try_from(attr_string.as_str()));
 
     ffi_unwrap!(policy.rotate(&attr));
 
-    write_ffi_bytes!(
+    ffi_write_bytes!(
         "updated policy",
         &ffi_unwrap!(serde_json::to_vec(&policy)),
         updated_policy_ptr,

@@ -106,7 +106,7 @@ macro_rules! ffi_bail {
 }
 
 #[macro_export]
-macro_rules! write_ffi_bytes {
+macro_rules! ffi_write_bytes {
     ($name: literal, $bytes: expr, $bytes_ptr: ident, $bytes_len: ident) => {
         $crate::ffi_not_null!(
             $bytes_ptr,
@@ -126,7 +126,7 @@ macro_rules! write_ffi_bytes {
 }
 
 #[macro_export]
-macro_rules! read_ffi_bytes {
+macro_rules! ffi_read_bytes {
     ($name: literal, $bytes_ptr: ident, $bytes_len: ident) => {{
         $crate::ffi_not_null!(
             $bytes_ptr,
@@ -145,14 +145,14 @@ macro_rules! read_ffi_bytes {
 }
 
 #[macro_export]
-macro_rules! read_ffi_string {
+macro_rules! ffi_read_string {
     ($name: literal, $string_ptr: ident) => {{
-        ffi_not_null!($string_ptr, format!("{} pointer should not be null", $name));
+        $crate::ffi_not_null!($string_ptr, format!("{} pointer should not be null", $name));
 
         match $crate::interfaces::ffi::macros::CStr::from_ptr($string_ptr).to_str() {
             Ok(msg) => msg.to_owned(),
             Err(e) => {
-                ffi_bail!(format!("CoverCrypt keys generation: invalid Policy: {}", e));
+                $crate::ffi_bail!(format!("CoverCrypt keys generation: invalid Policy: {}", e));
             }
         }
     }};
