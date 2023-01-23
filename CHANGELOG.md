@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [3.0.3] - 2023-01-23
+
+### Bug Fixes
+
+- Enforce coherent naming
+
+### Features
+
+- Add FFI interface
+
+---
+
 ## [3.0.2] - 2023-01-17
 
 ### Added

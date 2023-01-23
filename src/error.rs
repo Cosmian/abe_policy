@@ -40,6 +40,6 @@ pub enum Error {
 #[cfg(feature = "wasm_bindgen")]
 impl From<Error> for JsValue {
     fn from(e: Error) -> Self {
-        JsValue::from_str(&e.to_string())
+        Self::from_str(&e.to_string())
     }
 }
