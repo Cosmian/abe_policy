@@ -1,13 +1,13 @@
 use crate::AccessPolicy;
 use std::ffi::{c_char, c_int};
 
-#[no_mangle]
 /// Converts a boolean expression into an access policy.
 ///
 /// - `access_policy_ptr`       : output access policy buffer
 /// - `access_policy_len`       : size of the output buffer
 /// - `boolean_expression_ptr`  : boolean access policy string
 /// # Safety
+#[no_mangle]
 pub unsafe extern "C" fn h_parse_boolean_access_policy(
     access_policy_ptr: *mut c_char,
     access_policy_len: *mut c_int,

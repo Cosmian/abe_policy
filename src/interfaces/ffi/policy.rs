@@ -15,6 +15,7 @@ pub unsafe extern "C" fn h_policy(
 }
 
 /// # Safety
+#[no_mangle]
 pub unsafe extern "C" fn h_add_policy_axis(
     updated_policy_ptr: *mut c_char,
     updated_policy_len: *mut c_int,
@@ -40,6 +41,7 @@ pub unsafe extern "C" fn h_add_policy_axis(
 }
 
 /// # Safety
+#[no_mangle]
 pub unsafe extern "C" fn h_rotate_attribute(
     updated_policy_ptr: *mut c_char,
     updated_policy_len: *mut c_int,
