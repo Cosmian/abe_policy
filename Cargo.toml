@@ -1,20 +1,20 @@
 [package]
 name = "abe_policy"
-version = "3.0.2"
-edition = "2021"
+version = "3.0.3"
 authors = [
   "Bruno Grieder <bruno.grieder@cosmian.com>",
   "Théophile Brézot <theophile.brezot@cosmian.com>",
 ]
-description = "Policy and attributes definition for ABE cryptosystems"
 documentation = "https://docs.rs/abe_policy/"
+edition = "2021"
 license = "MIT/Apache-2.0"
 repository = "https://github.com/Cosmian/abe_policy"
+description = "Policy and attributes definition for ABE cryptosystems"
 
 [features]
-interface=[]
-ffi=["interface"]
-wasm_bindgen=["interface"]
+interface = []
+ffi = ["interface"]
+wasm_bindgen = ["interface"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

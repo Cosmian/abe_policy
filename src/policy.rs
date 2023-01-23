@@ -89,13 +89,13 @@ impl PolicyAxis {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct PolicyAxesParameters {
     pub attribute_names: Vec<String>,
     pub is_hierarchical: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct PolicyAttributesParameters {
     pub values: Vec<u32>,
     pub encryption_hint: EncryptionHint,
@@ -122,7 +122,7 @@ pub enum PolicyVersion {
 
 /// A policy is a set of policy axes. A fixed number of attribute creations
 /// (revocations + additions) is allowed.
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Policy {
     /// Version number
     pub version: PolicyVersion,
@@ -157,7 +157,7 @@ impl Policy {
             Err(e) => {
                 if let Ok(policy) = serde_json::from_slice::<LegacyPolicy>(bytes) {
                     // Convert the legacy format to the current one.
-                    Ok(Policy {
+                    Ok(Self {
                         version: PolicyVersion::V1,
                         max_attribute_creations: policy.max_attribute_creations,
                         last_attribute_value: policy.last_attribute_value,
@@ -201,6 +201,7 @@ impl Policy {
 
     /// Returns the remaining number of allowed attribute creations (additions + rotations).
     #[inline]
+    #[must_use]
     pub fn remaining_attribute_creations(&self) -> u32 {
         self.max_attribute_creations - self.last_attribute_value
     }

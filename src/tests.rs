@@ -1,6 +1,34 @@
 use crate::{error::Error, policy::Policy, Attribute, EncryptionHint, PolicyAxis};
 
-fn policy() -> Result<Policy, Error> {
+/// Creates the policy object used in tests.
+pub fn policy() -> Result<Policy, Error> {
+    let sec_level = PolicyAxis::new(
+        "Security Level",
+        vec![
+            ("Protected", EncryptionHint::Classic),
+            ("Confidential", EncryptionHint::Classic),
+            ("Top Secret", EncryptionHint::Hybridized),
+        ],
+        true,
+    );
+    let department = PolicyAxis::new(
+        "Department",
+        vec![
+            ("R&D", EncryptionHint::Classic),
+            ("HR", EncryptionHint::Classic),
+            ("MKG", EncryptionHint::Classic),
+            ("FIN", EncryptionHint::Classic),
+        ],
+        false,
+    );
+    let mut policy = Policy::new(100);
+    policy.add_axis(sec_level)?;
+    policy.add_axis(department)?;
+    Ok(policy)
+}
+
+#[test]
+fn check_policy() {
     let security_level = PolicyAxis::new(
         "Security Level",
         vec![
@@ -21,8 +49,8 @@ fn policy() -> Result<Policy, Error> {
         false,
     );
     let mut policy = Policy::new(100);
-    policy.add_axis(security_level.clone())?;
-    policy.add_axis(department.clone())?;
+    policy.add_axis(security_level.clone()).unwrap();
+    policy.add_axis(department.clone()).unwrap();
     // check that policy
     let attributes = policy.attributes();
     assert_eq!(security_level.len() + department.len(), attributes.len());
@@ -34,11 +62,10 @@ fn policy() -> Result<Policy, Error> {
     }
     for attribute in &attributes {
         assert_eq!(
-            policy.attribute_values(attribute)?[0],
-            policy.attribute_current_value(attribute)?
+            policy.attribute_values(attribute).unwrap()[0],
+            policy.attribute_current_value(attribute).unwrap()
         )
     }
-    Ok(policy)
 }
 
 #[test]
@@ -50,7 +77,6 @@ fn test_rotate_policy_attributes() -> Result<(), Error> {
     assert_eq!(2, policy.attribute_values(&attributes[0])?.len());
     policy.rotate(&attributes[2])?;
     assert_eq!(2, policy.attribute_values(&attributes[2])?.len());
-    println!("policy: {policy:?}");
     for attribute in &attributes {
         assert_eq!(
             policy.attribute_values(attribute)?[0],
