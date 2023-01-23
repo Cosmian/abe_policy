@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.4] - 2023-01-23
+
+### Miscellaneous Tasks
+
+- Must republish same code du to failed crates.io publish
+
 ---
 
 ## [3.0.3] - 2023-01-23
