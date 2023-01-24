@@ -29,7 +29,7 @@ impl BitOr for EncryptionHint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AxisAttributePorperties {
+pub struct AxisAttributeProperties {
     pub name: String,
     pub encryption_hint: EncryptionHint,
 }
@@ -45,7 +45,7 @@ pub struct PolicyAxis {
     /// Axis name
     pub name: String,
     /// Names of the axis attributes and hybridized encryption hints
-    pub attributes_properties: Vec<AxisAttributePorperties>,
+    pub attributes_properties: Vec<AxisAttributeProperties>,
     /// `true` if the axis is hierarchical
     pub hierarchical: bool,
 }
@@ -67,7 +67,7 @@ impl PolicyAxis {
             name: name.to_string(),
             attributes_properties: attributes_properties
                 .into_iter()
-                .map(|(axis_name, encryption_hint)| AxisAttributePorperties {
+                .map(|(axis_name, encryption_hint)| AxisAttributeProperties {
                     name: axis_name.to_string(),
                     encryption_hint,
                 })
@@ -300,5 +300,23 @@ impl Policy {
                 attribute_parameters.values[attribute_parameters.values.len() - 1]
             })
             .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))
+    }
+}
+
+impl TryFrom<&[u8]> for Policy {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        Self::parse_and_convert(bytes)
+    }
+}
+
+impl TryFrom<&Policy> for Vec<u8> {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(policy: &Policy) -> Result<Self, Self::Error> {
+        serde_json::to_vec(policy).map_err(Self::Error::DeserializationError)
     }
 }

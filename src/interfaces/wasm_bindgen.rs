@@ -1,16 +1,6 @@
-use crate::{AccessPolicy, Attribute, EncryptionHint, Error, Policy, PolicyAxis};
+use crate::{Attribute, EncryptionHint, Error, Policy, PolicyAxis};
 use js_sys::{Array, Boolean, JsString, Reflect};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-
-#[wasm_bindgen]
-pub fn webassembly_parse_boolean_access_policy(
-    boolean_expression: &str,
-) -> Result<String, JsValue> {
-    let access_policy = AccessPolicy::from_boolean_expression(boolean_expression)
-        .map_err(|e| JsValue::from_str(&format!("Error parsing the access policy: {e}")))?;
-    serde_json::to_string(&access_policy)
-        .map_err(|e| JsValue::from_str(&format!("Error serializing the access policy: {e}")))
-}
 
 #[wasm_bindgen]
 extern "C" {

@@ -13,7 +13,7 @@ description = "Policy and attributes definition for ABE cryptosystems"
 
 [features]
 interface = []
-ffi = ["interface"]
+ffi = ["cosmian_ffi", "interface"]
 wasm_bindgen = ["interface"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,6 +24,9 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
 wasm-bindgen = "0.2"
+
+# Optional dependencies
+cosmian_ffi = { git = "https://github.com/Cosmian/cosmian_ffi", optional = true }
 
 [lib]
 crate-type = ["cdylib", "rlib"]

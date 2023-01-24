@@ -6,6 +6,7 @@ version = 3
 name = "abe_policy"
 version = "3.0.5"
 dependencies = [
+ "cosmian_ffi",
  "js-sys",
  "serde",
  "serde_json",
@@ -24,6 +25,14 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "cosmian_ffi"
+version = "1.0.0"
+source = "git+https://github.com/Cosmian/cosmian_ffi#324cf6da9862aff862f13cccd091d9ddd69eee7e"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "itoa"

@@ -1,4 +1,5 @@
-use crate::{Attribute, Policy};
+use crate::{AccessPolicy, Attribute, Policy};
+use cosmian_ffi::{ffi_read_bytes, ffi_read_string, ffi_unwrap, ffi_write_bytes};
 use std::ffi::{c_char, c_int};
 
 /// # Safety
@@ -21,7 +22,7 @@ pub unsafe extern "C" fn h_add_policy_axis(
     updated_policy_len: *mut c_int,
     current_policy_ptr: *const c_char,
     current_policy_len: c_int,
-    axis_ptr: *mut c_char,
+    axis_ptr: *const c_char,
 ) -> c_int {
     let policy_bytes = ffi_read_bytes!("current policy", current_policy_ptr, current_policy_len);
     let mut policy = ffi_unwrap!(Policy::parse_and_convert(policy_bytes));
@@ -47,11 +48,11 @@ pub unsafe extern "C" fn h_rotate_attribute(
     updated_policy_len: *mut c_int,
     current_policy_ptr: *const c_char,
     current_policy_len: c_int,
-    axis_ptr: *const c_char,
+    attribute: *const c_char,
 ) -> c_int {
     let policy_bytes = ffi_read_bytes!("current policy", current_policy_ptr, current_policy_len);
     let mut policy = ffi_unwrap!(Policy::parse_and_convert(policy_bytes));
-    let attr_string = ffi_read_string!("axis", axis_ptr);
+    let attr_string = ffi_read_string!("attribute", attribute);
     let attr = ffi_unwrap!(Attribute::try_from(attr_string.as_str()));
 
     ffi_unwrap!(policy.rotate(&attr));
@@ -66,10 +67,19 @@ pub unsafe extern "C" fn h_rotate_attribute(
     0
 }
 
+/// # Safety
+#[no_mangle]
+pub unsafe extern "C" fn h_validate_access_policy(access_policy_str: *const c_char) -> c_int {
+    let access_policy = ffi_read_string!("access policy", access_policy_str);
+    ffi_unwrap!(AccessPolicy::from_boolean_expression(&access_policy));
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{interfaces::ffi::error::get_last_error, tests::policy};
+    use crate::tests::policy;
+    use cosmian_ffi::error::h_get_error;
     use std::ffi::{CStr, CString};
 
     #[test]
@@ -100,7 +110,7 @@ mod tests {
                 let mut error = vec![0u8; 8192];
                 let error_ptr = error.as_mut_ptr().cast();
                 let mut error_len = error.len() as c_int;
-                get_last_error(error_ptr, &mut error_len);
+                h_get_error(error_ptr, &mut error_len);
                 panic!("{}", CStr::from_ptr(error_ptr).to_str().unwrap());
             }
             std::slice::from_raw_parts(updated_policy_ptr.cast(), updated_policy_len as usize)
@@ -127,7 +137,7 @@ mod tests {
                 let mut error = vec![0u8; 8192];
                 let error_ptr = error.as_mut_ptr().cast();
                 let mut error_len = error.len() as c_int;
-                get_last_error(error_ptr, &mut error_len);
+                h_get_error(error_ptr, &mut error_len);
                 panic!("{}", CStr::from_ptr(error_ptr).to_str().unwrap());
             }
             std::slice::from_raw_parts(updated_policy_ptr.cast(), updated_policy_len as usize)
