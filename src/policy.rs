@@ -1,10 +1,12 @@
-use crate::{Attribute, Error};
-use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::{Debug, Display},
     ops::BitOr,
 };
+
+use serde::{Deserialize, Serialize};
+
+use crate::{Attribute, Error};
 
 /// Hint the user about which kind of encryption to use.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -103,7 +105,7 @@ pub struct PolicyAttributesParameters {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LegacyPolicy {
-    /// Last value taken by the attriute.
+    /// Last value taken by the attribute.
     pub(crate) last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
     /// creations (revocations + addition).
@@ -126,7 +128,7 @@ pub enum PolicyVersion {
 pub struct Policy {
     /// Version number
     pub version: PolicyVersion,
-    /// Last value taken by the attriute.
+    /// Last value taken by the attribute.
     pub(crate) last_attribute_value: u32,
     /// Maximum attribute value. Defines a maximum number of attribute
     /// creations (revocations + addition).
@@ -199,7 +201,8 @@ impl Policy {
         }
     }
 
-    /// Returns the remaining number of allowed attribute creations (additions + rotations).
+    /// Returns the remaining number of allowed attribute creations (additions +
+    /// rotations).
     #[inline]
     #[must_use]
     pub fn remaining_attribute_creations(&self) -> u32 {
