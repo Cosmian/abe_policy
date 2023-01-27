@@ -77,6 +77,14 @@ pub unsafe extern "C" fn h_validate_boolean_expression(
     0
 }
 
+/// # Safety
+#[no_mangle]
+pub unsafe extern "C" fn h_validate_attribute(attribute_ptr: *const c_char) -> c_int {
+    let attribute_str = ffi_read_string!("attribute", attribute_ptr);
+    ffi_unwrap!(AccessPolicy::from_boolean_expression(&attribute_str));
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

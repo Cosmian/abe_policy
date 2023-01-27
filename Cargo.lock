@@ -29,7 +29,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "cosmian_ffi"
 version = "1.0.0"
-source = "git+https://github.com/Cosmian/cosmian_ffi#324cf6da9862aff862f13cccd091d9ddd69eee7e"
+source = "git+https://github.com/Cosmian/cosmian_ffi#a3c4393bc5b6005da02a3eb14f3586c10dbf69a5"
 dependencies = [
  "thiserror",
 ]
