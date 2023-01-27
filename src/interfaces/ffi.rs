@@ -69,9 +69,11 @@ pub unsafe extern "C" fn h_rotate_attribute(
 
 /// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn h_validate_access_policy(access_policy_str: *const c_char) -> c_int {
-    let access_policy = ffi_read_string!("access policy", access_policy_str);
-    ffi_unwrap!(AccessPolicy::from_boolean_expression(&access_policy));
+pub unsafe extern "C" fn h_validate_boolean_expression(
+    boolean_expression_ptr: *const c_char,
+) -> c_int {
+    let boolean_expression = ffi_read_string!("boolean expression", boolean_expression_ptr);
+    ffi_unwrap!(AccessPolicy::from_boolean_expression(&boolean_expression));
     0
 }
 
